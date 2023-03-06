@@ -15,6 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.UUID;
 
+import java.time.LocalDate;
+
 /**
  * User Service
  * This class is the "worker" and responsible for all functionality related to
@@ -39,9 +41,14 @@ public class UserService {
     return this.userRepository.findAll();
   }
 
+  public User getUser(long userId) {
+    return this.userRepository.findById(userId); //.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "The user with the given id does not exist!"));
+  }
+
   public User createUser(User newUser) {
     newUser.setToken(UUID.randomUUID().toString());
-    newUser.setStatus(UserStatus.OFFLINE);
+    newUser.setStatus(UserStatus.ONLINE);
+    newUser.setCreationDate(LocalDate.now());
     checkIfUserExists(newUser);
     // saves the given entity but data is only persisted in the database once
     // flush() is called
@@ -50,6 +57,32 @@ public class UserService {
 
     log.debug("Created Information for User: {}", newUser);
     return newUser;
+  }
+
+
+  //ai made this	
+  public User logInUser(User user) {
+    User userToBeLoggedIn = userRepository.findByUsername(user.getUsername());
+    if (userToBeLoggedIn == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user with the given username does not exist!");
+    }
+    if (!userToBeLoggedIn.getName().equals(user.getName())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password is incorrect!");
+    }
+    userToBeLoggedIn.setStatus(UserStatus.ONLINE);
+    userToBeLoggedIn = userRepository.save(userToBeLoggedIn);
+    userRepository.flush();
+    log.debug("Logged in User: {}", userToBeLoggedIn);
+    return userToBeLoggedIn; 
+  }
+
+  public User logoutUser(long id){
+    User user = userRepository.findById(id);
+    user.setStatus(UserStatus.OFFLINE);
+    user = userRepository.save(user);
+    userRepository.flush();
+    log.debug("Logged out User: {}", user);
+    return user;
   }
 
   /**
