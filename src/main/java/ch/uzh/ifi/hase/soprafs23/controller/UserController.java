@@ -53,6 +53,19 @@ public class UserController {
     return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
   }
 
+  @PutMapping("/editProfile/{userId}") 
+  @ResponseBody 
+  public UserGetDTO editUser(@PathVariable Long userId, @RequestBody UserPostDTO userChanges) {
+    // fetch user in the internal representation
+    User user = userService.getUser(userId);
+    System.out.println(userChanges.getBirthDate());
+    // save the users changes
+    user = userService.editUser(user, userChanges);
+    System.out.println("User: " + user);
+    // convert user to the API representation
+    return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
+  }
+
   @PostMapping("/users")
   @ResponseStatus(HttpStatus.CREATED)
   @ResponseBody

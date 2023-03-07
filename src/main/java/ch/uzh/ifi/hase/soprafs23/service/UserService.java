@@ -3,6 +3,8 @@ package ch.uzh.ifi.hase.soprafs23.service;
 import ch.uzh.ifi.hase.soprafs23.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs23.entity.User;
 import ch.uzh.ifi.hase.soprafs23.repository.UserRepository;
+import ch.uzh.ifi.hase.soprafs23.rest.dto.UserPostDTO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
  * User Service
@@ -42,7 +45,7 @@ public class UserService {
   }
 
   public User getUser(long userId) {
-    return this.userRepository.findById(userId); //.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "The user with the given id does not exist!"));
+    return this.userRepository.findById(userId);
   }
 
   public User createUser(User newUser) {
@@ -59,8 +62,7 @@ public class UserService {
     return newUser;
   }
 
-
-  //ai made this	
+	
   public User logInUser(User user) {
     User userToBeLoggedIn = userRepository.findByUsername(user.getUsername());
     if (userToBeLoggedIn == null) {
@@ -82,6 +84,17 @@ public class UserService {
     user = userRepository.save(user);
     userRepository.flush();
     log.debug("Logged out User: {}", user);
+    return user;
+  }
+
+  public User editUser(User user, UserPostDTO userChanges) {
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    LocalDate birthDate = LocalDate.parse(userChanges.getBirthDate());
+    birthDate.format(formatter);
+    user.setBirthDate(birthDate);
+    user.setUsername(userChanges.getUsername());
+    user = userRepository.save(user);
+    userRepository.flush();
     return user;
   }
 

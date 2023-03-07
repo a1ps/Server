@@ -11,6 +11,15 @@ public class UserGetDTO {
   private String username;
   private UserStatus status;
   private LocalDate creationDate;
+  private LocalDate birthDate;
+
+  public LocalDate getBirthDate() {
+    return birthDate;
+  }
+
+  public void setBirthDate(LocalDate birthDate) {
+    this.birthDate = birthDate;
+  }
 
   public LocalDate getCreationDate() {
     return creationDate;

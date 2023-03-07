@@ -42,7 +42,7 @@ public class User implements Serializable {
   @Column(nullable = false)
   private LocalDate creationDate;
 
-  @Column
+  @Column(nullable = true)
   private LocalDate birthDate;
 
   public LocalDate getBirthDate() {
