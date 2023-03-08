@@ -46,26 +46,20 @@ public class UserController {
   @ResponseStatus(HttpStatus.OK)
   @ResponseBody 
   public UserGetDTO getUser(@PathVariable Long userId) {
-    System.out.println("User id: " + userId);
     // fetch user in the internal representation
     User user = userService.getUser(userId);
-    System.out.println("User: " + user);
     // convert user to the API representation
     return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
   }
 
-  @PutMapping("/user/{userId}")
+  @PutMapping("/users/{userId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @ResponseBody 
-  public void editUser(@PathVariable Long userId, @RequestBody UserPostDTO userChanges) {
+  public void editUser(@PathVariable Long userId, @RequestBody UserPostDTO userChanges){
     // fetch user in the internal representation
     User user = userService.getUser(userId);
-    System.out.println(userChanges.getBirthDate());
     // save the users changes
-    user = userService.editUser(user, userChanges);
-    System.out.println("User: " + user);
-    // convert user to the API representation
-    //return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
+    userService.editUser(user, userChanges);
   }
 
   @PostMapping("/users")
@@ -88,7 +82,7 @@ public class UserController {
     // convert API user to internal representation
     User userCredentials = DTOMapper.INSTANCE.convertUserPostDTOtoEntity(userPostDTO);
 
-    // create user
+    // veryfy user credentials and log in if correct
     User user = userService.logInUser(userCredentials);
     // convert internal representation of user back to API
     System.out.println("User logged in: " + user.getUsername());
@@ -99,14 +93,8 @@ public class UserController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @ResponseBody
   public void logoutUser(@RequestBody long id) {
-    // convert API user to internal representation
-    
-    
-    User user =userService.logoutUser(id);
-    // convert internal representation of user back to API
-    System.out.println("User logged out: " + user.getUsername());
-    System.out.println("User status: " + user.getStatus()); 
-    //return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
+    //set the user to offline
+    userService.logoutUser(id);
   }
 
 }

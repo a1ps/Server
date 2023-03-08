@@ -3,9 +3,12 @@ package ch.uzh.ifi.hase.soprafs23.controller;
 import ch.uzh.ifi.hase.soprafs23.constant.UserStatus;
 import ch.uzh.ifi.hase.soprafs23.entity.User;
 import ch.uzh.ifi.hase.soprafs23.rest.dto.UserPostDTO;
+
 import ch.uzh.ifi.hase.soprafs23.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,8 +29,10 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 /**
  * UserControllerTest
@@ -67,9 +73,10 @@ public class UserControllerTest {
         .andExpect(jsonPath("$[0].username", is(user.getUsername())))
         .andExpect(jsonPath("$[0].status", is(user.getStatus().toString())));
   }
-
+  
+  //valid post test
   @Test
-  public void createUser_validInput_userCreated() throws Exception {
+  public void createUser_validPOST_userCreated() throws Exception {
     // given
     User user = new User();
     user.setId(1L);
@@ -98,8 +105,41 @@ public class UserControllerTest {
         .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
   }
 
+
+  //self made test below
+  //invalid post test
   @Test
-  public void getUser_userExists_userReturned() throws Exception {
+  public void createUser_invalidPOST_noUserCreated() throws Exception {
+    //given
+    User user = new User();
+    user.setId(1L);
+    user.setName("Test User");
+    user.setUsername("testUsername");
+    user.setToken("1");
+    user.setStatus(UserStatus.ONLINE);
+    
+    UserPostDTO userPostDTO = new UserPostDTO();
+    userPostDTO.setName("Test User");
+    userPostDTO.setUsername("testUsername");
+
+    ResponseStatusException conflict = new ResponseStatusException(HttpStatus.CONFLICT, "Your chosen credentials already exists");
+    
+    given(userService.createUser(Mockito.any())).willThrow(conflict);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder postRequest = post("/users")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTO));
+
+    //then
+    mockMvc.perform(postRequest)
+        .andExpect(status().isConflict())
+        .andExpect(status().reason("Your chosen credentials already exists"));
+  }
+
+  //valid get test
+  @Test
+  public void getUser_validGET_userReturned() throws Exception {
     //given
     User user = new User();
     user.setId(1L);
@@ -129,36 +169,88 @@ public class UserControllerTest {
     
   }
 
+  //invalid get test
   @Test
-  public void getUser_userDoesNotExists_ErrosReturned() throws Exception {
+  public void getUser_invalidGET_ErrosReturned() throws Exception {
+    //query id that does not correspond to any user
+    long fakeId = 2L;
+
+    ResponseStatusException notFound = new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    
+    given(userService.getUser(fakeId)).willThrow(notFound);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder getRequest = get("/users/" + fakeId);
+
+    //then
+    mockMvc.perform(getRequest)
+        .andExpect(status().isNotFound())
+        .andExpect(status().reason("User not found"));
+  }
+
+  //valid put test
+  @Test
+  public void updateUser_validPUT_userUpdated() throws Exception {
     //given
     User user = new User();
     user.setId(1L);
     user.setName("Test User");
     user.setUsername("testUsername");
     user.setToken("1");
-    user.setStatus(UserStatus.ONLINE);
+    LocalDate birthDate = LocalDate.of(1999, 2, 3);
+    user.setBirthDate(birthDate);
 
     UserPostDTO userPostDTO = new UserPostDTO();
-    userPostDTO.setName("Test User");
-    userPostDTO.setUsername("testUsername");
+    userPostDTO.setUsername("Test User edited");
+    userPostDTO.setBirthDate("1999 03 03");
 
-    given(userService.getUser(user.getId())).willReturn(user);
+    //given(userService.editUser(user, userPostDTO)).willReturn(user);
 
     //when/then -> do the request + validate the result
-    MockHttpServletRequestBuilder getRequest = get("/users/1")
+    MockHttpServletRequestBuilder putRequest = put("/users/" + user.getId())
         .contentType(MediaType.APPLICATION_JSON)
         .content(asJsonString(userPostDTO));
 
     //then
-    mockMvc.perform(getRequest)
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id", is(user.getId().intValue())))
-        .andExpect(jsonPath("$.name", is(user.getName())))
-        .andExpect(jsonPath("$.username", is(user.getUsername())))
-        .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
-    
+    mockMvc.perform(putRequest)
+        .andExpect(status().isNoContent());
+        
   }
+
+  //invalid put test
+  @Test
+  public void updateUser_invalidPUT_ErrosReturned() throws Exception {
+    //query id that does not correspond to any user
+    long fakeId = 2L;
+
+    //from the user requested changes
+    UserPostDTO userPostDTO = new UserPostDTO();
+    userPostDTO.setUsername("Test User edited");
+    userPostDTO.setBirthDate("1999 03 03");
+
+    ResponseStatusException notFound = new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    
+    given(userService.getUser(fakeId)).willThrow(notFound);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder putRequest = put("/users/" + fakeId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTO));
+
+    //then
+    mockMvc.perform(putRequest)
+        .andExpect(status().isNotFound())
+        .andExpect(status().reason("User not found"));
+  }
+
+  //test for login/logout ? 
+
+
+
+
+
+  
+
   /**
    * Helper Method to convert userPostDTO into a JSON string such that the input
    * can be processed

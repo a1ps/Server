@@ -45,7 +45,11 @@ public class UserService {
   }
 
   public User getUser(long userId) {
-    return this.userRepository.findById(userId);
+    User user = this.userRepository.findById(userId);
+    if (user == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This user does not exist!");
+    }
+    return user;
   }
 
   public User createUser(User newUser) {
@@ -87,7 +91,7 @@ public class UserService {
     return user;
   }
 
-  public User editUser(User user, UserPostDTO userChanges) {
+  public void editUser(User user, UserPostDTO userChanges) {
     checkIfUserNameIsUnique(userChanges.getUsername());
     //only save the birthday if it has been set 
     if (userChanges.getBirthDate() != null){
@@ -102,7 +106,6 @@ public class UserService {
       user = userRepository.save(user);
       userRepository.flush();
     }
-    return user;
   }
 
   /**
