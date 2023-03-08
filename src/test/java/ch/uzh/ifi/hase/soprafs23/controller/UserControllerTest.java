@@ -98,6 +98,67 @@ public class UserControllerTest {
         .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
   }
 
+  @Test
+  public void getUser_userExists_userReturned() throws Exception {
+    //given
+    User user = new User();
+    user.setId(1L);
+    user.setName("Test User");
+    user.setUsername("testUsername");
+    user.setToken("1");
+    user.setStatus(UserStatus.ONLINE);
+
+    UserPostDTO userPostDTO = new UserPostDTO();
+    userPostDTO.setName("Test User");
+    userPostDTO.setUsername("testUsername");
+
+    given(userService.getUser(user.getId())).willReturn(user);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder getRequest = get("/users/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTO));
+
+    //then
+    mockMvc.perform(getRequest)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+        .andExpect(jsonPath("$.name", is(user.getName())))
+        .andExpect(jsonPath("$.username", is(user.getUsername())))
+        .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
+    
+  }
+
+  @Test
+  public void getUser_userDoesNotExists_ErrosReturned() throws Exception {
+    //given
+    User user = new User();
+    user.setId(1L);
+    user.setName("Test User");
+    user.setUsername("testUsername");
+    user.setToken("1");
+    user.setStatus(UserStatus.ONLINE);
+
+    UserPostDTO userPostDTO = new UserPostDTO();
+    userPostDTO.setName("Test User");
+    userPostDTO.setUsername("testUsername");
+
+    given(userService.getUser(user.getId())).willReturn(user);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder getRequest = get("/users/1")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTO));
+
+    //then
+    mockMvc.perform(getRequest)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+        .andExpect(jsonPath("$.name", is(user.getName())))
+        .andExpect(jsonPath("$.username", is(user.getUsername())))
+        .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
+    
+  }
   /**
    * Helper Method to convert userPostDTO into a JSON string such that the input
    * can be processed

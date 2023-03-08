@@ -42,7 +42,8 @@ public class UserController {
     return userGetDTOs;
   }
 
-  @GetMapping("/users/{userId}") 
+  @GetMapping("/users/{userId}")
+  @ResponseStatus(HttpStatus.OK)
   @ResponseBody 
   public UserGetDTO getUser(@PathVariable Long userId) {
     System.out.println("User id: " + userId);
@@ -53,9 +54,10 @@ public class UserController {
     return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
   }
 
-  @PutMapping("/editProfile/{userId}") 
+  @PutMapping("/user/{userId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @ResponseBody 
-  public UserGetDTO editUser(@PathVariable Long userId, @RequestBody UserPostDTO userChanges) {
+  public void editUser(@PathVariable Long userId, @RequestBody UserPostDTO userChanges) {
     // fetch user in the internal representation
     User user = userService.getUser(userId);
     System.out.println(userChanges.getBirthDate());
@@ -63,7 +65,7 @@ public class UserController {
     user = userService.editUser(user, userChanges);
     System.out.println("User: " + user);
     // convert user to the API representation
-    return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
+    //return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
   }
 
   @PostMapping("/users")
@@ -79,8 +81,7 @@ public class UserController {
     return DTOMapper.INSTANCE.convertEntityToUserGetDTO(createdUser);
   }
 
-  //ai made this
-  @PutMapping("/login")
+  @PostMapping("/login")
   @ResponseStatus(HttpStatus.OK)
   @ResponseBody
   public UserGetDTO loginUser(@RequestBody UserPostDTO userPostDTO) {
@@ -95,9 +96,9 @@ public class UserController {
   }
 
   @PutMapping("/logout")
-  @ResponseStatus(HttpStatus.OK)
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   @ResponseBody
-  public UserGetDTO logoutUser(@RequestBody long id) {
+  public void logoutUser(@RequestBody long id) {
     // convert API user to internal representation
     
     
@@ -105,7 +106,7 @@ public class UserController {
     // convert internal representation of user back to API
     System.out.println("User logged out: " + user.getUsername());
     System.out.println("User status: " + user.getStatus()); 
-    return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
+    //return DTOMapper.INSTANCE.convertEntityToUserGetDTO(user);
   }
 
 }

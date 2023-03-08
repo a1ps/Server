@@ -88,13 +88,20 @@ public class UserService {
   }
 
   public User editUser(User user, UserPostDTO userChanges) {
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    LocalDate birthDate = LocalDate.parse(userChanges.getBirthDate());
-    birthDate.format(formatter);
-    user.setBirthDate(birthDate);
-    user.setUsername(userChanges.getUsername());
-    user = userRepository.save(user);
-    userRepository.flush();
+    checkIfUserNameIsUnique(userChanges.getUsername());
+    //only save the birthday if it has been set 
+    if (userChanges.getBirthDate() != null){
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+      LocalDate birthDate = LocalDate.parse(userChanges.getBirthDate());
+      birthDate.format(formatter);
+      user.setBirthDate(birthDate);
+    }
+    //only save the username if it has been set
+    if(userChanges.getUsername() != null){
+      user.setUsername(userChanges.getUsername());
+      user = userRepository.save(user);
+      userRepository.flush();
+    }
     return user;
   }
 
@@ -112,14 +119,24 @@ public class UserService {
     User userByUsername = userRepository.findByUsername(userToBeCreated.getUsername());
     User userByName = userRepository.findByName(userToBeCreated.getName());
 
-    String baseErrorMessage = "The %s provided %s not unique. Therefore, the user could not be created!";
+    String baseErrorMessage = "The %s provided %s already taken. Therefore, the user could not be created!";
     if (userByUsername != null && userByName != null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+      throw new ResponseStatusException(HttpStatus.CONFLICT,
           String.format(baseErrorMessage, "username and the name", "are"));
     } else if (userByUsername != null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, "username", "is"));
+      throw new ResponseStatusException(HttpStatus.CONFLICT, String.format(baseErrorMessage, "username", "is"));
     } else if (userByName != null) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format(baseErrorMessage, "name", "is"));
+      throw new ResponseStatusException(HttpStatus.CONFLICT, String.format(baseErrorMessage, "name", "is"));
     }
+  }
+
+  private void checkIfUserNameIsUnique(String username) {
+    User userByUsername = userRepository.findByUsername(username);
+
+    String baseErrorMessage = "The %s provided %s not unique. Please choose a diffrent username!";
+    if (userByUsername != null) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, String.format(baseErrorMessage, "username", "is"));
+    }
+
   }
 }
