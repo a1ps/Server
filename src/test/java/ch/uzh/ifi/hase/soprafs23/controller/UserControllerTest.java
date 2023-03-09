@@ -243,7 +243,137 @@ public class UserControllerTest {
         .andExpect(status().reason("User not found"));
   }
 
-  //test for login/logout ? 
+  //test for login/logout 
+  
+  //valid login test
+  @Test
+  public void loginUser_validPOST_userLoggedIn() throws Exception {
+    //given
+    User user = new User();
+    user.setId(1L);
+    user.setName("Test User");
+    user.setUsername("testUsername");
+    user.setToken("1");
+    user.setStatus(UserStatus.ONLINE);
+
+    UserPostDTO userPostDTO = new UserPostDTO();
+    userPostDTO.setName("Test User");
+    userPostDTO.setUsername("testUsername");
+
+    given(userService.logInUser(Mockito.any())).willReturn(user);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder postRequest = post("/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTO));
+
+    //then
+    mockMvc.perform(postRequest)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id", is(user.getId().intValue())))
+        .andExpect(jsonPath("$.name", is(user.getName())))
+        .andExpect(jsonPath("$.username", is(user.getUsername())))
+        .andExpect(jsonPath("$.status", is(user.getStatus().toString())));
+  }
+
+  //invalid login test with wrong credentials
+  @Test
+  public void loginUser_invalidPOST_ErrosReturned() throws Exception {
+    //login with a userName that does not exist
+    UserPostDTO userPostDTO = new UserPostDTO();
+    userPostDTO.setUsername("Test User ");
+    userPostDTO.setName("testUsername");
+
+    ResponseStatusException notFound = new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    
+    given(userService.logInUser(Mockito.any())).willThrow(notFound);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder postRequest = post("/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTO));
+
+    //then
+    mockMvc.perform(postRequest)
+        .andExpect(status().isNotFound())
+        .andExpect(status().reason("User not found"));
+
+  }  
+
+
+  //login with the wrong name
+  @Test
+  public void loginUser_invalidNamePOST_ErrosReturned() throws Exception{ 
+    //given
+    User user = new User();
+    user.setId(1L);
+    user.setName("Test User");
+    user.setUsername("testUsername");
+    user.setToken("1");
+    user.setStatus(UserStatus.ONLINE);
+
+    UserPostDTO userPostDTOWrongName = new UserPostDTO();
+    userPostDTOWrongName.setUsername("Test User");
+    userPostDTOWrongName.setName("wrongtestUsername");
+
+    ResponseStatusException unauthorized = new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Your Name is incorrect");
+    
+    given(userService.logInUser(Mockito.any())).willThrow(unauthorized);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder postRequestWrongName = post("/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userPostDTOWrongName));
+
+    //then
+    mockMvc.perform(postRequestWrongName)
+        .andExpect(status().isUnauthorized())
+        .andExpect(status().reason("Your Name is incorrect"));
+  }
+
+  //valid logout test
+  @Test
+  public void logoutUser_validPUT_userLoggedOut() throws Exception {
+    //given
+    User user = new User();
+    user.setId(1L);
+    user.setName("Test User");
+    user.setUsername("testUsername");
+    user.setToken("1");
+    user.setStatus(UserStatus.OFFLINE);
+
+    long userId = 1L;
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder postRequest = put("/logout")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(userId));
+
+    //then
+    mockMvc.perform(postRequest)
+        .andExpect(status().isNoContent());
+  }
+
+  //invalid logout test
+  @Test
+  public void logoutUser_invalidPUT_ErrosReturned() throws Exception {
+    //given
+    long fakeId = 60L;
+
+    ResponseStatusException notFound = new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+    
+    given(userService.logoutUser(fakeId)).willThrow(notFound);
+
+    //when/then -> do the request + validate the result
+    MockHttpServletRequestBuilder postRequest = put("/logout")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(asJsonString(fakeId));
+
+    //then
+    mockMvc.perform(postRequest)
+        .andExpect(status().isNotFound())
+        .andExpect(status().reason("User not found"));
+  }
 
 
 
