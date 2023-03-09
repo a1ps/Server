@@ -73,7 +73,7 @@ public class UserService {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The user with the given username does not exist!");
     }
     if (!userToBeLoggedIn.getName().equals(user.getName())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password is incorrect!");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "The name is incorrect!");
     }
     userToBeLoggedIn.setStatus(UserStatus.ONLINE);
     userToBeLoggedIn = userRepository.save(userToBeLoggedIn);
@@ -84,6 +84,9 @@ public class UserService {
 
   public User logoutUser(long id){
     User user = userRepository.findById(id);
+    if (user == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "This user does not exist!");
+    }
     user.setStatus(UserStatus.OFFLINE);
     user = userRepository.save(user);
     userRepository.flush();
